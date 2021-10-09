@@ -79,7 +79,7 @@ public:
         return _flags;
     }
     void SetFlags(uint8_t InFlags) {
-        _flags |= InFlags;
+        _flags = InFlags;
     }
     void SetFlag(uint8_t InFlag) {
         _flags |= InFlag;
@@ -139,16 +139,11 @@ bool IsObjectProperty(rttr::type& propType)
 void WalkObjects(const rttr::variant& inValue, const std::function<bool(GameObject*&)>& InFunction)
 {
     auto originalType = inValue.get_type();
-    //printf("WalkObjects In Variant %s", originalType.get_name().data());
-
     //original
     rttr::instance orgobj = inValue;
-    //dewrap this dealio
     rttr::instance obj = orgobj.get_type().get_raw_type().is_wrapper() ? orgobj.get_wrapped_instance() : orgobj;
 
     auto curType = obj.get_derived_type();
-    //printf("WalkObjects %s\n", curType.get_name().data());
-
     auto ObjectType = rttr::type::get<GameObject>();
 
     GameObject* objRef = nullptr;
@@ -181,34 +176,22 @@ void WalkObjects(const rttr::variant& inValue, const std::function<bool(GameObje
             continue; // cannot serialize, because we cannot retrieve the value
        
         const auto name = prop.get_name().to_string();
-        //printf(" - prop name %s", name.data());
         auto propType = org_prop_value.get_type();
-        //printf( " - propType %s\n", propType.get_name().data());
         // it is all wrappers
         if (propType.is_wrapper())
         {
             propType = propType.get_wrapped_type();
-            //printf(" - was wrapper propType %s\n", propType.get_name().data());
 
-            if(IsObjectProperty(propType))
+            if (IsObjectProperty(propType))
             {
                 WalkObjects(org_prop_value, InFunction);
             }
-
-            if (propType.is_sequential_container())
+            else if (propType.is_sequential_container())
             {
-                std::reference_wrapper< std::vector<GameSceneElement*> > wrappedValue =
-                    org_prop_value.get_value< std::reference_wrapper< std::vector<GameSceneElement*> > >();
-
-                std::vector<GameSceneElement*>& vecRef = wrappedValue.get();
-                if (!vecRef.empty())
+                auto sub_array_view = org_prop_value.create_sequential_view();
+                for (auto& item : sub_array_view)
                 {
-                    printf(" - sequential container CRAZY HACKS\n");
-                    printf("   - Location of sequential container 0x%p\n", &vecRef);
-                    for (auto& item : vecRef)
-                    {
-                        WalkObjects(std::ref(item), InFunction);
-                    }
+                    WalkObjects(item, InFunction);
                 }
             }
         }
@@ -229,6 +212,7 @@ void IterateObjects(const std::function<bool(GameObject*)>& InFunction)
 }
 
 static const uint8_t FLAG_Visited = 0x01;
+static const uint8_t FLAG_GC = 0x02;
 
 int main(int argc, char** argv)
 {
@@ -238,31 +222,90 @@ int main(int argc, char** argv)
 
     topElement->AddChild(childA);
     topElement->AddChild(childB);
-
-    printf("Location of childA parent 0x%p\n", &childA->_parent);
-    printf("Location of Top children 0x%p\n", &topElement->_children);
     
+    // make sure all flags 0
     IterateObjects([](GameObject* InObj) -> bool
         {
             InObj->SetFlags(0);
             return true;
         });
-    WalkObjects(std::ref(childA),[](GameObject*& InOutObj) -> bool
+
+    // childA being forcefully destroyed
+    childA->SetFlags(FLAG_GC);
+
+    // clear out objects that will be garbage collected
+    WalkObjects(std::ref(topElement), [](GameObject*& InOutObj) -> bool
         {
+            if (InOutObj->GetFlags() & FLAG_GC)
+            {
+                InOutObj = nullptr;
+                return false;
+            }
+
+            // prevent cyclic visiting
             if (InOutObj->GetFlags() & FLAG_Visited)
             {
                 return false;
             }
-            
-            //ugly cast
-            GameSceneElement*& objCast = *(GameSceneElement**)&InOutObj;
-            printf("Location of %s parent 0x%p\n", 
-                objCast->GetName().c_str(),
-                &objCast->_parent);
+            else
+            {
+                InOutObj->SetFlag(FLAG_Visited);
+                return true;
+            }
+        });
 
-            InOutObj->SetFlag(FLAG_Visited);
+    printf("SHOULD BE NULL (0x%p)\n", topElement->_children[0]);
+
+    IterateObjects([](GameObject* InObj) -> bool
+        {
+            if (InObj->GetFlags() & FLAG_GC)
+            {
+                //DELETE InObj
+                printf("FAKE DELETE %s\n", InObj->GetName().c_str());
+            }
+
+            if (InObj->GetFlags() & FLAG_Visited)
+            {
+                printf("Could see %s from root\n", InObj->GetName().c_str());
+            }
+
             return true;
         });
+
+    // make sure all flags 0
+    IterateObjects([](GameObject* InObj) -> bool
+        {
+            InObj->SetFlags(0);
+            return true;
+        });
+    
+    // set this null to leave ChildB as a dangling object
+    topElement->_children[1] = nullptr;
+
+    WalkObjects(std::ref(topElement), [](GameObject*& InOutObj) -> bool
+        {
+            // prevent cyclic visiting
+            if (InOutObj->GetFlags() & FLAG_Visited)
+            {
+                return false;
+            }
+            else
+            {
+                InOutObj->SetFlag(FLAG_Visited);
+                return true;
+            }
+        });
+
+    IterateObjects([](GameObject* InObj) -> bool
+        {
+            if (InObj->GetFlags() & FLAG_Visited)
+            {
+                printf("Could only see %s from root\n", InObj->GetName().c_str());
+            }
+
+            return true;
+        });
+
 
     std::cout << "\n";
     return 0;
