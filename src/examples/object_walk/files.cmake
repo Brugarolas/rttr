@@ -2,7 +2,7 @@
 #                                                                                  #
 #  Copyright (c) 2014 - 2018 Axel Menzel <info@rttr.org>                           #
 #                                                                                  #
-#  This file is part of RTTR (Run Time Type Reflection)                            #
+#  This file is part of the examples of RTTR (Run Time Type Reflection)            #
 #  License: MIT License                                                            #
 #                                                                                  #
 #  Permission is hereby granted, free of charge, to any person obtaining           #
@@ -25,20 +25,9 @@
 #                                                                                  #
 ####################################################################################
 
-# for compiling all examples with only one target
-add_custom_target(examples ALL
-                  COMMENT "compile all examples")
-                                    
-set_target_properties(examples PROPERTIES 
-                      FOLDER "Examples")
-                  
-add_subdirectory (json_serialization)
-add_subdirectory (library_loading)
-#DS
-add_subdirectory (object_walk)
+set(HPP_FILES ""
+                 )
 
-if (MAX_CXX_STANDARD GREATER_EQUAL 14)
-    add_subdirectory (scripting)
-else()
-    message(WARNING "Cannot generate scripting example, because at least C++14 needed")
-endif()
+
+set(SOURCE_FILES main.cpp
+                 )

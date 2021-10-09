@@ -260,7 +260,8 @@ class property_wrapper<member_object_ptr, Declaring_Typ, A(C::*), void, Acc_Leve
             metadata_handler<Metadata_Count>(std::move(metadata_list)),
             m_acc(acc)
         {
-            static_assert(!std::is_pointer<A>::value, "The data type of the property is already a pointer type! The given policy cannot be used for this property.");
+            //DS allow this
+            //static_assert(!std::is_pointer<A>::value, "The data type of the property is already a pointer type! The given policy cannot be used for this property.");
 
             init();
         }
