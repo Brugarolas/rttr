@@ -88,6 +88,124 @@ public:
    
 };
 
+class BaseParam
+{
+    RTTR_ENABLE();
+    RTTR_REGISTRATION_FRIEND
+public:
+
+    virtual BaseParam* Clone() const = 0;
+
+    virtual ~BaseParam() {} 
+};
+
+class FloatParam : public BaseParam
+{
+    RTTR_ENABLE(BaseParam);
+    RTTR_REGISTRATION_FRIEND
+public:
+    float Value;
+
+    FloatParam() {} 
+    FloatParam(float InValue) : Value(InValue) {}
+
+    virtual BaseParam* Clone() const override
+    {
+        return new FloatParam(Value);
+    } 
+
+    virtual ~FloatParam() {}
+};
+
+class ObjectParam : public BaseParam
+{
+    RTTR_ENABLE(BaseParam);
+    RTTR_REGISTRATION_FRIEND
+public:
+    ObjectParam() {}
+    ObjectParam(GameObject* InValue) : Value(InValue) {}
+
+    virtual BaseParam* Clone() const override
+    {
+        return new ObjectParam(Value);
+    }
+
+    GameObject* Value = nullptr;
+    virtual ~ObjectParam() {}
+};
+
+class PolyParam
+{
+    RTTR_ENABLE();
+    RTTR_REGISTRATION_FRIEND
+
+protected:
+    BaseParam* _param = nullptr;
+
+public:
+    PolyParam() {}
+
+    PolyParam(PolyParam const& InParam)
+    {
+        if (InParam._param)
+        {
+            _param = InParam._param->Clone();
+        }
+    }
+    PolyParam& operator=(PolyParam const& InParam)
+    {
+        if (InParam._param)
+        {
+            _param = InParam._param->Clone();
+        }
+        return *this;
+    }
+
+    PolyParam(PolyParam&& InParam)
+    {
+
+    }
+
+    PolyParam& operator=(PolyParam&& InParam)
+    {
+        return *this;
+    }
+
+    void FreeParam()
+    {
+        if (_param)
+        {
+            delete _param;
+            _param = nullptr;
+        }
+    }
+
+    void SetParamPtr(BaseParam* InValue)
+    {
+        FreeParam();
+        _param = InValue;
+    }
+
+    void SetParam(GameObject* InValue)
+    {
+        auto nP = new ObjectParam();
+        nP->Value = InValue;
+        SetParamPtr(nP);
+    }
+
+    void SetParam(float InValue)
+    {
+        auto nP = new FloatParam();
+        nP->Value = InValue;
+        SetParamPtr(nP);
+    }
+
+    virtual ~PolyParam() 
+    {
+        FreeParam();
+    }
+};
+
 class GameSceneElement : public GameObject
 {
     friend int main(int argc, char** argv);
@@ -101,9 +219,14 @@ protected:
     GameSceneElement* _parent = nullptr;
     std::vector<GameSceneElement*> _children;
 
+   
+   
+
     GameSceneElement(const char* InName) : GameObject(InName) { }
 
 public:
+    std::vector< PolyParam > _params;
+
     virtual ~GameSceneElement() { }
 
     void AddChild(GameSceneElement* InChild)
@@ -124,9 +247,21 @@ RTTR_REGISTRATION
 {
     rttr::registration::class_<GameObject>("GameObject");
 
+    rttr::registration::class_<BaseParam>("BaseParam");
+
+    rttr::registration::class_<FloatParam>("FloatParam")
+        .property("Value", &FloatParam::Value)(rttr::policy::prop::as_reference_wrapper);
+
+    rttr::registration::class_<ObjectParam>("ObjectParam")
+        .property("Value", &ObjectParam::Value)(rttr::policy::prop::as_reference_wrapper);
+
+    rttr::registration::class_<PolyParam>("PolyParam")
+        .property("_param", &PolyParam::_param)(rttr::policy::prop::as_reference_wrapper);
+
     rttr::registration::class_<GameSceneElement>("GameSceneElement")
         .property("_parent", &GameSceneElement::_parent)(rttr::policy::prop::as_reference_wrapper)
         .property("_children", &GameSceneElement::_children)(rttr::policy::prop::as_reference_wrapper)
+        .property("_params", &GameSceneElement::_params)(rttr::policy::prop::as_reference_wrapper)        
         ;
 }
 
@@ -194,6 +329,24 @@ void WalkObjects(const rttr::variant& inValue, const std::function<bool(GameObje
                     WalkObjects(item, InFunction);
                 }
             }
+            else if (propType.is_associative_container())
+            {
+                auto sub_array_view = org_prop_value.create_associative_view();
+
+                for (auto& item : sub_array_view)
+                {
+                    WalkObjects(item.first, InFunction);
+
+                    if (sub_array_view.is_key_only_type() == false)
+                    {
+                        WalkObjects(item.second, InFunction);
+                    }
+                }
+            }
+            else if (propType.is_class() || propType.is_pointer())
+            {
+                WalkObjects(org_prop_value, InFunction);
+            }
         }
     }
 }
@@ -220,8 +373,16 @@ int main(int argc, char** argv)
     auto childA = Make_GameObject< GameSceneElement >("ChildA");
     auto childB = Make_GameObject< GameSceneElement >("ChildB");
 
+    auto pObj = Make_GameObject< GameSceneElement >("ParamObj");
+
     topElement->AddChild(childA);
     topElement->AddChild(childB);
+
+    PolyParam nP;
+    nP.SetParam(pObj);
+
+    topElement->_params.push_back(nP);
+
     
     // make sure all flags 0
     IterateObjects([](GameObject* InObj) -> bool
@@ -249,6 +410,8 @@ int main(int argc, char** argv)
             }
             else
             {
+                printf("can see %s\n", InOutObj->GetName().c_str());
+
                 InOutObj->SetFlag(FLAG_Visited);
                 return true;
             }
