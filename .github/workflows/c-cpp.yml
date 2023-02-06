@@ -1,0 +1,22 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v1.0.2
+    - name: configure
+      run: cmake -A Win32 -DBUILD_UNIT_TESTS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_INSTALLER=OFF -DBUILD_PACKAGE=OFF -DBUILD_DOCUMENTATION=OFF -B Build_Win32
+    - name: build
+      run: cmake --build Build_Win32 --config Release
+  
