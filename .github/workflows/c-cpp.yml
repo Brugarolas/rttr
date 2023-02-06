@@ -13,10 +13,17 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Welcome
+      run: cmd -C "echo Welcom..."
+    - name: Pssh Version
+      run: cmd -C "pwsh --version"
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1.0.2
+    - name: Restore NuGet packages
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: nuget restore ${{env.SOLUTION_FILE_PATH}}
     - name: configure
-      run: cmake -G "Visual Studio 16 2019" -A Win32 -DBUILD_UNIT_TESTS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_INSTALLER=OFF -DBUILD_PACKAGE=OFF -DBUILD_DOCUMENTATION=OFF -B Build_Win32
+      run: cmake -A Win32 -DBUILD_UNIT_TESTS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_INSTALLER=OFF -DBUILD_PACKAGE=OFF -DBUILD_DOCUMENTATION=OFF -B Build_Win32
     - name: build
       run: cmake --build Build_Win32 --config Release
   
