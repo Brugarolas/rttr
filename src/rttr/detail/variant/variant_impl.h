@@ -288,8 +288,7 @@ static RTTR_INLINE ptr_to_nullptr(T& to)
 /////////////////////////////////////////////////////////////////////////////////////////
 
 template<typename T>
-typename std::enable_if<!detail::is_nullptr_t<T>::value, bool>::type
-static RTTR_INLINE ptr_to_nullptr(T& to)
+static typename std::enable_if<!detail::is_nullptr_t<T>::value, bool>::type inline ptr_to_nullptr(T& to)
 {
     return false;
 }

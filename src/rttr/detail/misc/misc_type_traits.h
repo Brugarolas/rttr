@@ -546,6 +546,8 @@ namespace detail
     // use it like this:
     // max_size_of_list<int, bool, double>::value => 8
 
+    //std::integral_constant<class _Ty, _Ty _Val> 返回指定类型的静态常量
+    //max_sizeof_list_impl 返回sizeof最大的类对应的sizeof值
     template<typename... Ts>
     using max_sizeof_list = std::integral_constant<std::size_t, max_sizeof_list_impl<Ts...>::value>;
 
