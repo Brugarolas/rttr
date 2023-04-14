@@ -135,7 +135,8 @@ namespace rttr
 #endif
 
 #ifdef RTTR_DLL // compiled as a DLL
-#   ifdef RTTR_DLL_EXPORTS // defined if we are building the DLL
+#   ifdef RTTR_DLL_EXPORTS // defined if we are building the DLL 
+//some class use dllexport, others use dllimport  Cmake编译不同的库（包含不同源文件）注入了不同的宏定义 
 #       define RTTR_API RTTR_HELPER_DLL_EXPORT
 #   else
 #       define RTTR_API RTTR_HELPER_DLL_IMPORT

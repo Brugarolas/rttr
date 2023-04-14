@@ -145,7 +145,7 @@ static void rttr_auto_register_reflection_function_()
         );
 }
 
-int main(int argc, char** argv)
+int _2332main(int argc, char** argv)
 {
     std::string json_string;
 
@@ -178,10 +178,13 @@ int main(int argc, char** argv)
     //const std::string * str_val_ref = &str_var;
     //str_val_ref = nullptr;
 
+    circle c_2("Circle #2");
+    variant var2 = c_2;
+    circle c_2_ref = var2.get_value<circle>();
+
 
     std::cout << "Circle: c_1:\n" << json_string << std::endl;
 
-    circle c_2("Circle #2"); // create a new empty circle
 
     io::from_json(json_string, c_2); // deserialize it with the content of 'c_1'
     std::cout << "\n############################################\n" << std::endl;
