@@ -1,4 +1,5 @@
 #include <rttr/registration>
+#include<iostream>
 #include "ExpTest.h"
 //https://en.cppreference.com/w/cpp/language/type_alias
 
@@ -25,6 +26,36 @@ using StuBTy2 = typename StuA<Ty>::type2;
 
 int ExpTest::m_int = 10;
 
+template<typename T>
+constexpr bool is_lvalue(T&& expression) { return std::is_lvalue_reference<T>::value; }
+
+template<typename T>
+constexpr bool is_not_lvalue(T&& expression) { return  !is_lvalue(std::forward<T&&>(expression)); }
+
+
+class Base {
+public:
+	Base() {
+		std::cout << "Base()" << std::endl;
+	}
+
+	~Base() {
+		std::cout << "~Base()" << std::endl;
+	}
+};
+
+class Derived : public Base {
+public:
+	Derived() {
+		std::cout << "Derived()" << std::endl;
+	}
+
+	~Derived() {
+		std::cout << "~Derived()" << std::endl;
+	}
+};
+
+
 int main()
 {
 	using namespace rttr;
@@ -50,6 +81,21 @@ int main()
 	type  ft_obj_ptr_type = type::get(ft_obj_ptr);
 	type  c_ft_obj_ptr_type = type::get(c_ft_obj_ptr);
 	bool ft_obj_flag = ft_obj_ptr_type == ft_obj_type; //不一样
+
+
+	ClzB&& clz_ins = ClzB(); //ClzB&&是指类型 不是值类别（左值 右值）
+	int l_val = 10;
+	int& l_val_ref = l_val;
+	bool int_ctgy = std::is_lvalue_reference<int>::value;//false
+	bool l_val_ctgy = is_lvalue(int_ctgy);//true
+	bool l_val_ref_ctgy = is_lvalue(l_val_ref);//true
+	bool clz_ins_ctgy = is_lvalue(clz_ins);//true
+	bool str_literal_ctgy = is_lvalue("like");//true
+	bool int_literal_ctgy = is_lvalue(7);//false
+	Base* base_point = new Derived();
+	delete base_point;
+	Base& base_ref = std::move(Derived());//会调子类析构
+	Base& base_ref2 = Derived();//会调子类析构
 
 	return 0;
 }
