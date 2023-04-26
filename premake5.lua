@@ -10,12 +10,13 @@ project "rttr"
     files
     {
         "src/rttr/**.h",
+        "src/rttr/**.h.in",
         "src/rttr/**.cpp"
     }
 
     includedirs
     {
-        "src/rttr"
+        "%{IncludeDirs.rttr}"
     }
 
     defines 
