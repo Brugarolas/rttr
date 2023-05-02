@@ -1,6 +1,7 @@
 project "rttr"
     kind "StaticLib"
     language "C++"
+    staticruntime "off"
     
     outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
