@@ -80,6 +80,58 @@ RTTR_LOCAL RTTR_INLINE const char* extract_type_signature(const char* signature)
 }
 
 /////////////////////////////////////////////////////////////////////////////////
+//std::string是模板 会展开成一大串 不要用这个
+template<typename T>
+RTTR_LOCAL RTTR_INLINE const char* g() RTTR_NOEXCEPT
+{
+    
+
+#if RTTR_COMPILER == RTTR_COMPILER_MSVC
+    #define GETFUNCINFO __FUNCSIG__
+    #ifdef RTTR_NO_CXX11_NOEXCEPT
+        #define SKIP_SIZE_AT_BEGIN 36
+        #define SKIP_SIZE_AT_END 7
+    #else
+        #define SKIP_SIZE_AT_BEGIN 36
+        #define SKIP_SIZE_AT_END 16
+    #endif
+
+#elif RTTR_COMPILER == RTTR_COMPILER_GNUC
+    #define GETFUNCINFO __PRETTY_FUNCTION__
+    #define SKIP_SIZE_AT_BEGIN 40
+    #define SKIP_SIZE_AT_END 1
+#elif RTTR_COMPILER == RTTR_COMPILER_CLANG || RTTR_COMPILER == RTTR_COMPILER_APPLECLANG
+    #define GETFUNCINFO __PRETTY_FUNCTION__
+    #define SKIP_SIZE_AT_BEGIN 35
+    #define SKIP_SIZE_AT_END 1
+#else
+    #error "Don't know how the extract type signatur for this compiler! Abort! Abort!"
+#endif
+
+    static constexpr std::size_t skip_begin = 36;
+    static constexpr std::size_t skip_end = 16;
+
+    const char* func_info = GETFUNCINFO;
+    //return &func_info[skip_size_at_begin];
+    //std::string result = 
+    //    std::string(&GETFUNCINFO[SKIP_SIZE_AT_BEGIN], 
+    //                std::char_traits<char>::length(&GETFUNCINFO[SKIP_SIZE_AT_BEGIN]) - SKIP_SIZE_AT_END); //FIXMEjhh看看对不对
+
+    //const char* func_info_offset = &func_info[skip_begin];
+    //std::size_t grep_size = std::char_traits<char>::length(func_info_offset) - skip_end;
+
+    //std::string result = std::string(&func_info[skip_begin],
+    //            std::char_traits<char>::length(&func_info[skip_begin]) - skip_end); //FIXMEjhh看看对不对
+
+    //return result;
+
+    return &func_info[rttr::detail::skip_size_at_begin];
+
+
+
+}
+
+//------------
 
 template<typename T>
 RTTR_LOCAL RTTR_INLINE const char* f() RTTR_NOEXCEPT
@@ -109,6 +161,7 @@ RTTR_LOCAL RTTR_INLINE std::size_t get_size(const char* s) RTTR_NOEXCEPT
 template<typename T>
 RTTR_LOCAL RTTR_INLINE string_view get_type_name() RTTR_NOEXCEPT
 {
+    std::string res = std::string(g<bool>(), get_size(g<bool>()));
     return string_view(f<T>(), get_size(f<T>()));
 }
 

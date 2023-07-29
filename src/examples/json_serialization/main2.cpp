@@ -1,4 +1,6 @@
 #include <rttr/registration>
+#include <rttr/variant.h>
+//#include <type_traits>
 #include<iostream>
 #include "ExpTest.h"
 //https://en.cppreference.com/w/cpp/language/type_alias
@@ -16,9 +18,9 @@ struct StuA
 	using type2 = typename int;
 };
 
-//using ¿ÉÒÔÊÇÌØ¶¨ÀàĞÍµÄ±ğÃû Ò²¿ÉÒÔÊÇÀàÄ£°å±ğÃû
+//using å¯ä»¥æ˜¯ç‰¹å®šç±»å‹çš„åˆ«å ä¹Ÿå¯ä»¥æ˜¯ç±»æ¨¡æ¿åˆ«å
 template<typename Ty>
-using StuBTy1 = typename StuA<Ty>::type;//Ä£°åÖĞÈ¡ÄÚÈİÇ°ÃæÃ²ËÆ¶¼Òª¼Ótypename
+using StuBTy1 = typename StuA<Ty>::type;//æ¨¡æ¿ä¸­å–å†…å®¹å‰é¢è²Œä¼¼éƒ½è¦åŠ typename
 
 template<typename Ty>
 using StuBTy2 = typename StuA<Ty>::type2;
@@ -39,9 +41,27 @@ public:
 		std::cout << "Base()" << std::endl;
 	}
 
+	Base(int val) {
+		m_base = val;
+		std::cout << "Base(int val)" << std::endl;
+	}
+
+	int getVal()
+	{
+		return m_base;
+	}
+
+	Base(const Base& obj)
+	{
+		m_base = obj.m_base;
+		std::cout << "Base(const Base& obj)" << std::endl;
+	}
+
 	~Base() {
 		std::cout << "~Base()" << std::endl;
 	}
+private:
+	int m_base = 10;
 };
 
 class Derived : public Base {
@@ -56,8 +76,56 @@ public:
 };
 
 
+
+using bool_constant3 = std::integral_constant<bool, false>;
+
+
+template <bool _Val>
+using bool_constant2 = std::integral_constant<bool, _Val>;
+
+template <class _Base, class _Derived>
+struct if_is_base_of : bool_constant2<__is_base_of(_Base, _Derived)> {
+	// determine whether _Base is a base of or the same as _Derived
+};
+
+struct alignas(32) defstruct //æŒ‡å®šç±»å‹å¯¹è±¡çš„å¯¹é½è¦æ±‚
+{
+
+};
+
 int main()
 {
+	rttr::registration::class_<Base>("Base");
+	//variant var = type::get<float>.create();
+
+	size_t tysize = rttr::type_list<char, bool, uint64_t>::size;
+	using var_basic_type = rttr::type_list<char, bool, uint64_t>;
+	rttr::detail::max_sizeof_list<var_basic_type> typeIns;
+	std::aligned_storage<rttr::detail::max_sizeof_list<var_basic_type>::value,
+		rttr::detail::max_alignof_list<var_basic_type>::value>::type  typeIns2;//è¿™ä¸ªæ˜¯å­˜å‚¨valçš„å…·ä½“ç±»å‹
+
+	//max_sizeof_list_impl å’Œ max_alignof_list_implå†™æ³•éƒ½æŒºç‚«çš„(ç¼–è¯‘æœŸè®¡ç®—å¥½äº†) å¯ä»¥æŠ„è¿‡æ¥
+	std::aligned_storage<rttr::detail::max_sizeof_list_impl<var_basic_type>::value,
+		rttr::detail::max_alignof_list_impl<var_basic_type>::value>::type  typeIns3;//è¿™ä¸ªæ˜¯å­˜å‚¨valçš„å…·ä½“ç±»å‹
+
+	std::aligned_storage<8, 8> typeIns4; 
+	static constexpr size_t defstruct_align = std::alignment_of<defstruct>::value;//32
+	//int valll = defstruct_align;
+	//typeä¸º std::aligned_storage<8, 8>æŠŠ8 8ä¼ é€’ç»™std::_Aligned<>æ¨å¯¼å‡ºçš„std::_Align_type<double, 8>
+
+	rttr::variant var = float(defstruct_align);
+	rttr::variant var2 = Base(26);
+	Base& bobj = var.get_value<Base>();
+	Base& bobj2 = Base(28);
+
+	using newAliType = std::_Align_type<double, 8>;
+	newAliType newTypeIns;
+	//memcpy(newTypeIns._Pad, reinterpret_cast<double*>(&bobj), 8);//è¿™æ ·å­è²Œä¼¼ä¸è¡Œ  ä¸çŸ¥é“æ€ä¹ˆè‡ªå·±å†™ä»£ç åœ¨newTypeInså­˜å‚¨bobjåœ°å€
+
+
+	new (&newTypeIns) Base(bobj2);//ä»€ä¹ˆæ—¶æœºdeleteæ‰ï¼Ÿï¼Ÿ
+	int bobj_val = reinterpret_cast<Base*>(newTypeIns._Pad)->getVal();
+
 	using namespace rttr;
 	//const float c_ft_obj = 12.0f;
 	const float& c_ft_obj = 12.0f;
@@ -67,23 +135,23 @@ int main()
 
 	void* p_ft_static = &ft_type_static;
 	void* p_ft_dynamic = &ft_type_dynamic;
-	bool p_ft_flag = ft_type_dynamic == ft_type_static; //¶Ô±ÈÖ¸Õë ÀïÃæm_type_data²ÅÊÇÍ¬Ò»·İÊı¾İ
-	//C++ typeidÊÇ×Ö·û´®¶Ô±È
-	//float/ const float/ const float& m_type_data¶¼Ò»Ñù
+	bool p_ft_flag = ft_type_dynamic == ft_type_static; //å¯¹æ¯”æŒ‡é’ˆ é‡Œé¢m_type_dataæ‰æ˜¯åŒä¸€ä»½æ•°æ®
+	//C++ typeidæ˜¯å­—ç¬¦ä¸²å¯¹æ¯”
+	//float/ const float/ const float& m_type_dataéƒ½ä¸€æ ·
 
 	float ft_obj = 23.0f;
 	float* ft_obj_ptr = &ft_obj;
 	const float* c_ft_obj_ptr = ft_obj_ptr;
-	bool ft_flag = type::get<float>() == type::get(ft_obj);       
+	bool ft_flag = type::get<float>() == type::get(ft_obj_ptr);
 	bool ft_ptr_flag = type::get<float*>() == type::get(ft_obj_ptr);
 	bool c_ft_ptr_flag = type::get<const float*>() == type::get(c_ft_obj_ptr);
 	type  ft_obj_type = type::get(ft_obj);
 	type  ft_obj_ptr_type = type::get(ft_obj_ptr);
 	type  c_ft_obj_ptr_type = type::get(c_ft_obj_ptr);
-	bool ft_obj_flag = ft_obj_ptr_type == ft_obj_type; //²»Ò»Ñù
+	bool ft_obj_flag = ft_obj_ptr_type == ft_obj_type; //ä¸ä¸€æ ·
 
 
-	ClzB&& clz_ins = ClzB(); //ClzB&&ÊÇÖ¸ÀàĞÍ ²»ÊÇÖµÀà±ğ£¨×óÖµ ÓÒÖµ£©
+	ClzB&& clz_ins = ClzB(); //ClzB&&æ˜¯æŒ‡ç±»å‹ ä¸æ˜¯å€¼ç±»åˆ«ï¼ˆå·¦å€¼ å³å€¼ï¼‰
 	int l_val = 10;
 	int& l_val_ref = l_val;
 	bool int_ctgy = std::is_lvalue_reference<int>::value;//false
@@ -94,8 +162,12 @@ int main()
 	bool int_literal_ctgy = is_lvalue(7);//false
 	Base* base_point = new Derived();
 	delete base_point;
-	Base& base_ref = std::move(Derived());//»áµ÷×ÓÀàÎö¹¹
-	Base& base_ref2 = Derived();//»áµ÷×ÓÀàÎö¹¹
+	Base& base_ref = std::move(Derived());//ä¼šè°ƒå­ç±»ææ„
+	Base& base_ref2 = Derived();//ä¼šè°ƒå­ç±»ææ„
 
+	bool val = std::is_base_of<Base, Derived>::value; //__is_base_ofæ²¡æœ‰æºç 
+	using newType = std::enable_if_t<true, int>;//trueå¦‚æœæ”¹æˆfalse ç¼–è¯‘æœŸä¼šæŠ¥é”™ï¼ˆæ¨¡æ¿æ²¡æ³•æ ¹æ®ç»™çš„å‚æ•°è¿›è¡Œç‰¹åŒ–ï¼‰
+	newType val2 = 10;
+	//using newType2 = std::enable_if_t<!std::is_same<void, void>::value, void>;
 	return 0;
 }
