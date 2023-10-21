@@ -16,6 +16,8 @@ struct StuA
 {
 	using type = ClzB;
 	using type2 = typename int;
+	using RType = Ty;
+	typedef Ty Ty_type;//理解成此时进来了 参数确定了？
 };
 
 //using 可以是特定类型的别名 也可以是类模板别名
@@ -24,6 +26,18 @@ using StuBTy1 = typename StuA<Ty>::type;//模板中取内容前面貌似都要�
 
 template<typename Ty>
 using StuBTy2 = typename StuA<Ty>::type2;
+
+template<typename Ty>
+using StuBTy3 = StuA<Ty>; //typedef无法表示模板
+
+//template<typename Ty>
+//typedef StuA<Ty> StuBTyDef;
+
+template<typename Ty, typename Ty2 = int>
+struct StuA_Son
+{
+	typedef StuA<Ty, Ty2>  StuATyDef;//理解成这里已经没有推导了 StuA_Son<Ty, Ty2>已经发生了推导
+};
 
 
 int ExpTest::m_int = 10;
@@ -92,6 +106,32 @@ struct alignas(32) defstruct //指定类型对象的对齐要求
 {
 
 };
+
+class MetaData
+{
+private:
+	int aaa = 10;
+public:
+	template<typename T>
+	void SetType()
+	{
+		aaa = 0;
+	}
+
+};
+
+template<>
+void MetaData::SetType<float>()
+{
+	aaa = 20;
+}
+
+template<>
+void MetaData::SetType<int>()
+{
+	aaa = 30;
+}
+
 
 int main()
 {
@@ -166,8 +206,24 @@ int main()
 	Base& base_ref2 = Derived();//会调子类析构
 
 	bool val = std::is_base_of<Base, Derived>::value; //__is_base_of没有源码
+	bool value2= std::is_base_of<bool, bool>::value;
 	using newType = std::enable_if_t<true, int>;//true如果改成false 编译期会报错（模板没法根据给的参数进行特化）
 	newType val2 = 10;
 	//using newType2 = std::enable_if_t<!std::is_same<void, void>::value, void>;
+
+	//using val_using = val;
+
+	StuBTy1<int> clzBIns;
+	StuA<int>::Ty_type clzBIns2;
+	StuA_Son<int, int>::StuATyDef clzAIns;
+
+	bool flag = rttr::type::get<float>() == rttr::type::get<float>();
+
+	std::decay<int&>::type ins = 6;
+
+	MetaData data;
+	data.SetType<float>();
+	data.SetType<int>();
+
 	return 0;
 }
