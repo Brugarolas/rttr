@@ -28,8 +28,6 @@
 #ifndef RTTR_CORE_PREREQUISITES_H_
 #define RTTR_CORE_PREREQUISITES_H_
 
-#include "rttr/detail/base/version.h"
-
 namespace rttr
 {
 

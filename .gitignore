@@ -1,2 +1,6 @@
 .vscode
 build
+bin-intermediates/
+bin/
+*.vcxproj
+*.vcxproj.filters
