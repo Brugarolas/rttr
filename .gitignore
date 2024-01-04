@@ -4,3 +4,4 @@ bin-intermediates/
 bin/
 *.vcxproj
 *.vcxproj.filters
+rttr.vcxproj.user
