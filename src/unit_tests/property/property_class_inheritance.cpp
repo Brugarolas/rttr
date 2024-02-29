@@ -500,7 +500,7 @@ TEST_CASE("property - class - inheritance - invoke", "[property]")
     // try access from top instance a property in the most derived class (bottom)
     property base_prop = t.get_property("top");
 
-    variant ret = base_prop.get_value(top);
+    std::variant ret = base_prop.get_value(top);
     REQUIRE(ret.is_type<int>() == true);
     CHECK(ret.get_value<int>() == 12);
     // try to change the value

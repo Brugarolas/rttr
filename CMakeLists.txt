@@ -31,9 +31,21 @@
 # the build configuration options are initialized.                                 #
 ####################################################################################
 
-cmake_minimum_required (VERSION 3.0)
+cmake_minimum_required (VERSION 3.16)
 
 project ("rttr" LANGUAGES CXX)
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    add_compile_options(
+      -Wno-error=implicit-const-int-float-conversion
+      -Wno-error=ordered-compare-function-pointers
+      -Wno-error=self-assign-overloaded
+    )
+endif()
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
 
