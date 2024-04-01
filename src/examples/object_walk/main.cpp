@@ -206,6 +206,40 @@ public:
     }
 };
 
+class BinarySerializer
+{
+private:
+    int valTest = 44;
+
+public:
+    BinarySerializer()
+    {
+
+    }
+
+    virtual void DOStuff()
+    {
+
+    }
+};
+
+class Vector2
+{
+    RTTR_ENABLE();
+    RTTR_REGISTRATION_FRIEND
+
+public:
+    float x = 0, y = 0;
+public:
+    Vector2() {}
+
+    void BinarySerialize(BinarySerializer& InSerializer, bool bIsWrite)
+    {
+
+    }
+};
+
+
 class GameSceneElement : public GameObject
 {
     friend int main(int argc, char** argv);
@@ -219,13 +253,17 @@ protected:
     GameSceneElement* _parent = nullptr;
     std::vector<GameSceneElement*> _children;
 
-   
+    Vector2 _translation;
    
 
     GameSceneElement(const char* InName) : GameObject(InName) { }
 
 public:
     std::vector< PolyParam > _params;
+
+    auto& GetTranslation() {
+        return _translation;            
+    }
 
     virtual ~GameSceneElement() { }
 
@@ -242,6 +280,17 @@ inline T* Make_GameObject(const char* InName)
     static_assert(std::is_base_of_v<GameObject, T>, "Game Object");
     return new T(InName);
 }
+
+
+
+void BinarySerialize(Vector2 &ioVec, BinarySerializer& InSerializer, bool bIsWrite)
+{
+    printf("did BinarySerialize %f, %f\n", ioVec.x, ioVec.y);
+
+    ioVec.x = 111;
+    ioVec.y = 222;
+}
+
 
 RTTR_REGISTRATION
 {
@@ -261,8 +310,17 @@ RTTR_REGISTRATION
     rttr::registration::class_<GameSceneElement>("GameSceneElement")
         .property("_parent", &GameSceneElement::_parent)(rttr::policy::prop::as_reference_wrapper)
         .property("_children", &GameSceneElement::_children)(rttr::policy::prop::as_reference_wrapper)
-        .property("_params", &GameSceneElement::_params)(rttr::policy::prop::as_reference_wrapper)        
+        .property("_params", &GameSceneElement::_params)(rttr::policy::prop::as_reference_wrapper)
+
+        .property("_translation", &GameSceneElement::_translation)(rttr::policy::prop::as_reference_wrapper)
         ;
+
+    rttr::registration::class_<Vector2>("Vector2")
+        .property("x", &Vector2::x)(rttr::policy::prop::as_reference_wrapper)
+        .property("y", &Vector2::y)(rttr::policy::prop::as_reference_wrapper)
+        .method("BinarySerialize", &Vector2::BinarySerialize);
+
+    rttr::registration::method("BinarySerialize", &BinarySerialize);
 }
 
 bool IsObjectProperty(rttr::type& propType)
@@ -367,8 +425,74 @@ void IterateObjects(const std::function<bool(GameObject*)>& InFunction)
 static const uint8_t FLAG_Visited = 0x01;
 static const uint8_t FLAG_GC = 0x02;
 
+void DumpFunction(rttr::method &InMethod)
+{
+    printf("method %s\n", InMethod.get_name().to_string().c_str());
+
+    auto curParams = InMethod.get_parameter_infos();
+
+    for (auto& curParam : curParams)
+    {
+        printf(" - param %s: %s\n",
+            curParam.get_name().to_string().c_str(),
+            curParam.get_type().get_name().to_string().c_str());
+    }
+}
+
 int main(int argc, char** argv)
 {
+    auto typeCheck = rttr::type::get<BinarySerializer&>();
+
+    auto vectypeCheck = rttr::type::get<Vector2&>();
+
+    BinarySerializer testSer;
+    //Vector2 curVec;
+
+    GameSceneElement thisGameElement("yoyo");
+
+    auto gameEle = rttr::type::get<GameSceneElement>();
+    auto hasProp = gameEle.get_property("_translation");
+    
+    auto curTrans = hasProp.get_value(thisGameElement);
+
+    auto transType = curTrans.get_type();
+    auto baseTransType = transType.get_wrapped_type();
+
+    thisGameElement.GetTranslation().x = 123;
+    thisGameElement.GetTranslation().y = 321;
+
+ auto globalSerializer = rttr::type::get_global_method("BinarySerialize",
+        {
+            baseTransType,
+            rttr::type::get<BinarySerializer&>(),
+            rttr::type::get<bool>()
+        });
+
+    if (globalSerializer)
+    {
+        DumpFunction(globalSerializer);
+
+        printf("FOUND globalSerializer\n");
+        globalSerializer.invoke({}, curTrans, std::ref(testSer), true);
+    }
+
+    printf("after BinarySerialize %f, %f\n", thisGameElement.GetTranslation().x, thisGameElement.GetTranslation().y);
+
+    auto methodList = vectypeCheck.get_methods();
+
+    for (auto& curMethod : methodList)
+    {
+        printf("method %s\n", curMethod.get_name().to_string().c_str());
+
+        auto curParams = curMethod.get_parameter_infos();
+
+        for (auto& curParam : curParams)
+        {
+           
+            printf("param %s\n", curParam.get_type().get_name().to_string().c_str());
+        }
+    }
+
     auto topElement = Make_GameObject< GameSceneElement >("Top");
     auto childA = Make_GameObject< GameSceneElement >("ChildA");
     auto childB = Make_GameObject< GameSceneElement >("ChildB");
@@ -413,7 +537,7 @@ int main(int argc, char** argv)
                 printf("can see %s\n", InOutObj->GetName().c_str());
 
                 InOutObj->SetFlag(FLAG_Visited);
-                return true;
+                return true;  
             }
         });
 

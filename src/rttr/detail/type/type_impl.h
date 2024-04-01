@@ -367,8 +367,10 @@ struct type_converter;
 template<typename T>
 RTTR_INLINE type type::get() RTTR_NOEXCEPT
 {
-    using non_ref_type = typename std::remove_cv<typename std::remove_reference<T>::type>::type;
-    return detail::create_or_get_type<non_ref_type>();
+	//SR - DS we prefer to know reference!
+    //using non_ref_type = typename std::remove_cv<typename std::remove_reference<T>::type>::type;
+    using non_cv_type = typename std::remove_cv<T>::type;
+    return detail::create_or_get_type<non_cv_type>();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
