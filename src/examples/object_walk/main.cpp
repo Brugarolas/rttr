@@ -55,7 +55,7 @@ class GameObject
     NO_COPY_ALLOWED(GameObject)
 
 protected:
-    GameObject(const char *InName)
+    GameObject(const std::string& InName)
     {
         _nextObject = GFirstObject;
         GFirstObject = this;
@@ -256,7 +256,7 @@ protected:
     Vector2 _translation;
    
 
-    GameSceneElement(const char* InName) : GameObject(InName) { }
+    GameSceneElement(const std::string &InName) : GameObject(InName) { }
 
 public:
     std::vector< PolyParam > _params;
@@ -313,6 +313,8 @@ RTTR_REGISTRATION
         .property("_params", &GameSceneElement::_params)(rttr::policy::prop::as_reference_wrapper)
 
         .property("_translation", &GameSceneElement::_translation)(rttr::policy::prop::as_reference_wrapper)
+
+        .constructor<const std::string&>()
         ;
 
     rttr::registration::class_<Vector2>("Vector2")
@@ -439,6 +441,16 @@ void DumpFunction(rttr::method &InMethod)
     }
 }
 
+#define SE_CRASH_BREAK *reinterpret_cast<int32_t*>(3) = 0xDEAD;
+#define SE_ASSERT(x) { if(!(x)) { SE_CRASH_BREAK; } } 
+
+//template<typename T>
+//void SimpleTest()
+//{
+//    static_assert(std::is_reference_v<T>);
+//    static_assert(std::is_pointer_v< std::remove_reference<T>::type >);
+//}
+
 int main(int argc, char** argv)
 {
     auto typeCheck = rttr::type::get<BinarySerializer&>();
@@ -450,7 +462,22 @@ int main(int argc, char** argv)
 
     GameSceneElement thisGameElement("yoyo");
 
+
+    //SimpleTest<int*&>();
+    auto checkTypeInt = rttr::type::get<int*&>();
+
+    SE_ASSERT(checkTypeInt.is_pointer());
+    SE_ASSERT(checkTypeInt.is_reference());
+
     auto gameEle = rttr::type::get<GameSceneElement>();
+
+
+    //test creation
+    variant obj = gameEle.create({ std::string("new object") });
+
+    SE_ASSERT(obj.is_valid());
+
+
     auto hasProp = gameEle.get_property("_translation");
     
     auto curTrans = hasProp.get_value(thisGameElement);
@@ -461,7 +488,7 @@ int main(int argc, char** argv)
     thisGameElement.GetTranslation().x = 123;
     thisGameElement.GetTranslation().y = 321;
 
- auto globalSerializer = rttr::type::get_global_method("BinarySerialize",
+    auto globalSerializer = rttr::type::get_global_method("BinarySerialize",
         {
             baseTransType,
             rttr::type::get<BinarySerializer&>(),

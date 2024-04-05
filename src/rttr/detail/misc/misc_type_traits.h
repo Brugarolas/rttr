@@ -467,6 +467,10 @@ namespace detail
     template<typename T, typename Tp = remove_cv_t<remove_reference_t<T>>>
     using is_sequential_container = std::integral_constant<bool, !has_is_valid_alias<sequential_container_mapper<Tp>>::value>;
 
+    //SR - DS
+    template<typename T>
+    using is_pointer_noref = std::is_pointer< typename std::remove_reference<T>::type >;
+
     /////////////////////////////////////////////////////////////////////////////////////
 
     template <typename T>

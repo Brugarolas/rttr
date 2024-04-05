@@ -101,13 +101,24 @@ RTTR_INLINE argument::non_ptr_type<T> argument::is_type() const RTTR_NOEXCEPT
 template<typename T>
 RTTR_INLINE argument::ref_type<T> argument::is_type() const RTTR_NOEXCEPT
 {
-    return (rttr::type::get<T>() == m_type) ||
+    auto cmpType = rttr::type::get<T>();
+    return (cmpType == m_type) ||
+        //SR - DS probably not ideal TODO check this
+        (cmpType.is_reference() && cmpType.get_raw_type() == m_type) ||
         (m_type.is_wrapper() && rttr::type::get<T&>() == m_type.get_wrapped_type()) ||
-        (m_variant && type::get<variant>() == type::get<T>());
+        (m_variant && type::get<variant>() == cmpType);
 }
 
-
-
+//SR - DS
+RTTR_INLINE bool argument::is_type_arg(const type& Cmp) const RTTR_NOEXCEPT
+{
+    return (Cmp == m_type) ||
+        //SR - DS probably not ideal TODO check this
+        (Cmp.is_reference() && Cmp.get_raw_type() == m_type);
+        //SR - DS expand this? have an type can pass to
+        //(m_type.is_wrapper() && rttr::type::get<T&>() == m_type.get_wrapped_type()) ||
+        //(m_variant && type::get<variant>() == type::get<T>());
+}
 /////////////////////////////////////////////////////////////////////////////////////////
 
 RTTR_INLINE type argument::get_type() const RTTR_NOEXCEPT

@@ -82,7 +82,9 @@ struct compare_with_arg_list
         std::size_t index = 0;
         for (; index < arg_count; ++itr, ++index)
         {
-            if ((itr->get_type() != args[index].get_type()))
+            //SR - DS
+            //(itr->get_type() != args[index].get_type()))
+            if (!args[index].is_type_arg(itr->get_type()))                
                 return false;
         }
 

@@ -99,6 +99,8 @@ enum class type_trait_infos : std::size_t
     is_associative_container,
     is_sequential_container,
     is_template_instantiation,
+    //SR - DS
+    is_reference,
 
     TYPE_TRAIT_COUNT
 };
@@ -320,14 +322,17 @@ RTTR_LOCAL std::unique_ptr<type_data> make_type_data()
                             type_trait_value{ TYPE_TRAIT_TO_BITSET_VALUE(is_class) |
                                               TYPE_TRAIT_TO_BITSET_VALUE(is_enum) |
                                               TYPE_TRAIT_TO_BITSET_VALUE(is_array) |
-                                              TYPE_TRAIT_TO_BITSET_VALUE(is_pointer) |
+                                              //SR - DS
+                                              TYPE_TRAIT_TO_BITSET_VALUE_2(::rttr::detail::is_pointer_noref, is_pointer) |
                                               TYPE_TRAIT_TO_BITSET_VALUE(is_arithmetic) |
                                               TYPE_TRAIT_TO_BITSET_VALUE_2(is_function_ptr, is_function_pointer) |
                                               TYPE_TRAIT_TO_BITSET_VALUE(is_member_object_pointer) |
                                               TYPE_TRAIT_TO_BITSET_VALUE(is_member_function_pointer) |
                                               TYPE_TRAIT_TO_BITSET_VALUE_2(::rttr::detail::is_associative_container, is_associative_container) |
                                               TYPE_TRAIT_TO_BITSET_VALUE_2(::rttr::detail::is_sequential_container, is_sequential_container) |
-                                              TYPE_TRAIT_TO_BITSET_VALUE_2(::rttr::detail::template_type_trait, is_template_instantiation)
+                                              TYPE_TRAIT_TO_BITSET_VALUE_2(::rttr::detail::template_type_trait, is_template_instantiation) |
+                                              //SR - DS
+                                              TYPE_TRAIT_TO_BITSET_VALUE_2(std::is_lvalue_reference, is_reference)
                                             },
                             class_data(get_most_derived_info_func<T>(), template_type_trait<T>::get_template_arguments())
                         }
