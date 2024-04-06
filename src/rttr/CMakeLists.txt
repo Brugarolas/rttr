@@ -35,9 +35,9 @@ generateLibraryVersionVariables(${RTTR_VERSION_MAJOR} ${RTTR_VERSION_MINOR} ${RT
 
 loadFolder("rttr" HPP_FILES SRC_FILES BUILD_INSTALLER)
 
-if (USE_PCH)
-    activate_precompiled_headers("detail/base/pch.h" SRC_FILES)
-endif()
+#if (USE_PCH)
+#    activate_precompiled_headers("detail/base/pch.h" SRC_FILES)
+#endif()
 
 if (${BUILD_RTTR_DYNAMIC})
     add_library(rttr_core SHARED ${UnityBuild} ${SRC_FILES} ${HPP_FILES})
@@ -46,7 +46,9 @@ if (${BUILD_RTTR_DYNAMIC})
     target_compile_definitions(rttr_core PRIVATE RTTR_DLL_EXPORTS)
     target_compile_definitions(rttr_core PUBLIC RTTR_DLL)
 
-    
+    if (USE_PCH)
+        target_precompile_headers(rttr_core PRIVATE "detail/base/pch.h")
+    endif()
 
     set_target_properties(rttr_core PROPERTIES
                           VERSION ${RTTR_VERSION} SOVERSION ${RTTR_VERSION}
@@ -87,7 +89,9 @@ if (BUILD_STATIC)
     add_library(rttr_core_lib STATIC ${UnityBuild} ${SRC_FILES} ${HPP_FILES})
     add_library(RTTR::Core_Lib ALIAS rttr_core_lib)
 
-    
+    if (USE_PCH)
+        target_precompile_headers(rttr_core_lib PRIVATE "detail/base/pch.h")
+    endif()
 
     set_target_properties(rttr_core_lib PROPERTIES
                           VERSION ${RTTR_VERSION} SOVERSION ${RTTR_VERSION}
@@ -131,6 +135,10 @@ if (BUILD_WITH_STATIC_RUNTIME_LIBS)
     add_library(rttr_core_s SHARED ${UnityBuild} ${SRC_FILES} ${HPP_FILES})
     add_library(RTTR::Core_STL ALIAS rttr_core_s)
     
+    if (USE_PCH)
+        target_precompile_headers(rttr_core_s PRIVATE "detail/base/pch.h")
+    endif()
+
     target_compile_definitions(rttr_core_s PRIVATE RTTR_DLL_EXPORTS)
     target_compile_definitions(rttr_core_s PUBLIC RTTR_DLL)
 
@@ -178,7 +186,9 @@ if (BUILD_WITH_STATIC_RUNTIME_LIBS)
         add_library(rttr_core_lib_s STATIC ${UnityBuild} ${SRC_FILES} ${HPP_FILES})
         add_library(RTTR::Core_Lib_STL ALIAS rttr_core_lib_s)
         
-        
+        if (USE_PCH)
+            target_precompile_headers(rttr_core_lib_s PRIVATE "detail/base/pch.h")
+        endif()
 
         target_include_directories(rttr_core_lib_s PUBLIC
                                    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../>

@@ -191,7 +191,10 @@ variant type::get_metadata(const variant& key) const
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
-
+variant type::create() const
+{
+    return create({});
+}
 variant type::create(vector<argument> args) const
 {
     auto& ctors = m_type_data->m_class_data.m_ctors;
