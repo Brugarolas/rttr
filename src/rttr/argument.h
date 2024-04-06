@@ -66,7 +66,11 @@ class RTTR_API argument
     using ptr_type = detail::enable_if_t<std::is_pointer<T>::value, bool>;
 
     template<typename T>
-    using non_ptr_type = detail::enable_if_t<!std::is_pointer<T>::value, bool>;
+    using non_ptr_type = detail::enable_if_t<!std::is_pointer<T>::value && !std::is_reference<T>::value, bool>;
+
+    //SR - DS
+    template<typename T>
+    using ref_type = detail::enable_if_t<std::is_reference<T>::value, bool>;
 
     template<typename T>
     using is_variant_t = detail::enable_if_t<is_variant<T>::value && !std::is_rvalue_reference<T>::value, T>;
@@ -101,6 +105,11 @@ public:
     RTTR_INLINE ptr_type<T> is_type() const RTTR_NOEXCEPT;
     template<typename T>
     RTTR_INLINE non_ptr_type<T> is_type() const RTTR_NOEXCEPT;
+    template<typename T>
+    RTTR_INLINE ref_type<T> is_type() const RTTR_NOEXCEPT;
+
+    //SR - DS
+    RTTR_INLINE bool is_type_arg(const type& Cmp) const RTTR_NOEXCEPT;
 
     template<typename T>
     RTTR_INLINE arg_value_t<T>& get_value() const RTTR_NOEXCEPT;

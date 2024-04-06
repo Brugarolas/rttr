@@ -97,6 +97,30 @@ RTTR_INLINE argument::non_ptr_type<T> argument::is_type() const RTTR_NOEXCEPT
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+//SR - DS
+template<typename T>
+RTTR_INLINE argument::ref_type<T> argument::is_type() const RTTR_NOEXCEPT
+{
+    auto cmpType = rttr::type::get<T>();
+    return (cmpType == m_type) ||
+        //SR - DS probably not ideal TODO check this
+        (cmpType.is_reference() && cmpType.get_raw_type() == m_type) ||
+        (m_type.is_wrapper() && rttr::type::get<T&>() == m_type.get_wrapped_type()) ||
+        (m_variant && type::get<variant>() == cmpType);
+}
+
+//SR - DS
+RTTR_INLINE bool argument::is_type_arg(const type& Cmp) const RTTR_NOEXCEPT
+{
+    return (Cmp == m_type) ||
+        //SR - DS probably not ideal TODO check this
+        (Cmp.is_reference() && Cmp.get_raw_type() == m_type);
+        //SR - DS expand this? have an type can pass to
+        //(m_type.is_wrapper() && rttr::type::get<T&>() == m_type.get_wrapped_type()) ||
+        //(m_variant && type::get<variant>() == type::get<T>());
+}
+/////////////////////////////////////////////////////////////////////////////////////////
+
 RTTR_INLINE type argument::get_type() const RTTR_NOEXCEPT
 {
     return m_type;
@@ -107,8 +131,32 @@ RTTR_INLINE type argument::get_type() const RTTR_NOEXCEPT
 template<typename T>
 RTTR_INLINE argument::arg_value_t<T>& argument::get_value() const RTTR_NOEXCEPT
 {
-    using raw_type = typename std::remove_reference<T>::type;
-    return (*reinterpret_cast<raw_type*>(const_cast<void *>(m_data)));
+    //SR - DS various changes
+    using no_ref_type = typename std::remove_reference<T>::type;
+    using wrapped_type = typename std::reference_wrapper< no_ref_type >;
+
+    auto rawType = rttr::type::get< T >();
+    auto typeAsWrapped = rttr::type::get< std::reference_wrapper<no_ref_type> >();
+
+    if (m_variant)
+    {        
+        if (m_type == typeAsWrapped)
+        {
+            wrapped_type wrappedValue = m_variant->get_value< std::reference_wrapper<no_ref_type> >();
+            return wrappedValue.get();
+        }
+        else if (m_type == rawType)
+        {
+            return (*reinterpret_cast<no_ref_type*>(const_cast<void*>(m_variant->get_raw_ptr())));
+        }
+    }
+    else if (m_type.is_wrapper() && m_type == typeAsWrapped)
+    {
+        wrapped_type wrappedValue = *(wrapped_type*)m_data;
+        return wrappedValue.get();
+    }
+
+    return (*reinterpret_cast<no_ref_type*>(const_cast<void *>(m_data)));
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

@@ -377,6 +377,11 @@ class RTTR_API type
          */
         RTTR_INLINE bool is_template_instantiation() const RTTR_NOEXCEPT;
 
+        //SR - DS
+        // only related to lvalue reference
+        RTTR_INLINE bool is_reference() const RTTR_NOEXCEPT;
+
+        
         /*!
          * \brief Returns a list of type objects that represents the template arguments.
          *        An empty list is returned when this type is not an instantiation of a template

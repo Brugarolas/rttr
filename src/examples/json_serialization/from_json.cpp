@@ -32,6 +32,8 @@
 
 #include <iostream>
 
+#pragma warning( disable : 4996)
+
 #define RAPIDJSON_HAS_STDSTRING 1
 #include <rapidjson/prettywriter.h> // for stringify JSON
 #include <rapidjson/document.h>     // rapidjson's DOM-style API
