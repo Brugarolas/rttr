@@ -37,13 +37,35 @@
 // thats a bug in libc++, because of interaction with __attribute__ ((__visibility__("hidden"), __always_inline__)) in std::string
 template class std::basic_string<char>;
 
-RTTR_REGISTRATION
+//RTTR_REGISTRATION
+static void rttr_auto_register_reflection_function_();                             
+namespace                                                                           
+{                                                                                   
+    struct rttr__auto__register__                                                   
+    {                                                                               
+        rttr__auto__register__()                                                    
+        {                                                                           
+            rttr_auto_register_reflection_function_();                              
+        }                                                                           
+    };                                                                              
+}                                                                                   
+static const rttr__auto__register__ auto_register__52;            
+static void rttr_auto_register_reflection_function_()
 {
     using namespace rttr;
 
     type::get<std::nullptr_t>();
 
-    RTTR_REGISTRATION_STANDARD_TYPE_VARIANTS(void)
+    //float a[10] = {1, 3, 5};
+
+    //记录基础类型
+    //RTTR_REGISTRATION_STANDARD_TYPE_VARIANTS(void)
+    rttr::type::get<void>();
+    rttr::type::get<void*>();
+    rttr::type::get<const void*>();
+
+    std::string rtti_str = rttr::detail::g<bool>();
+
     RTTR_REGISTRATION_STANDARD_TYPE_VARIANTS(rttr::type)
     RTTR_REGISTRATION_STANDARD_TYPE_VARIANTS(bool)
     RTTR_REGISTRATION_STANDARD_TYPE_VARIANTS(signed char)

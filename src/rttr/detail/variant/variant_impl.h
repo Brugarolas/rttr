@@ -58,6 +58,11 @@ template<typename T, typename Tp>
 RTTR_INLINE variant::variant(T&& val)
 :   m_policy(&detail::variant_policy<Tp>::invoke)
 {
+    //!std::is_same<detail::decay_except_array_t<T>, variant>::value
+    //意思是不允许Variant对象调用这个函数
+    //using test_type = std::enable_if_t<!std::is_same<detail::decay_except_array_t<T>, variant>::value, 
+    //                                    detail::decay_except_array_t<T>>;
+
     static_assert(std::is_copy_constructible<Tp>::value || std::is_array<Tp>::value,
                   "The given value is not copy constructible, try to add a copy constructor to the class.");
 
@@ -288,8 +293,7 @@ static RTTR_INLINE ptr_to_nullptr(T& to)
 /////////////////////////////////////////////////////////////////////////////////////////
 
 template<typename T>
-typename std::enable_if<!detail::is_nullptr_t<T>::value, bool>::type
-static RTTR_INLINE ptr_to_nullptr(T& to)
+static typename std::enable_if<!detail::is_nullptr_t<T>::value, bool>::type inline ptr_to_nullptr(T& to)
 {
     return false;
 }

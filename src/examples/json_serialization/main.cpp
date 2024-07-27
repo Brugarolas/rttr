@@ -66,7 +66,11 @@ struct shape
     point2d position;
     std::map<color, point2d> dictionary;
 
-    RTTR_ENABLE()
+public:
+    virtual inline::rttr::type get_type() const { return ::rttr::detail::get_type_from_instance(this); }
+    virtual inline void* get_ptr() { return reinterpret_cast<void*>(this); }
+    virtual inline::rttr::detail::derived_info get_derived_info() { return { reinterpret_cast<void*>(this), ::rttr::detail::get_type_from_instance(this) }; }
+    using base_class_list = ::rttr::type_list<>;
 private:
     bool visible = false;
 };
@@ -80,10 +84,34 @@ struct circle : shape
 
     int no_serialize = 100;
 
-    RTTR_ENABLE(shape)
+    //RTTR_ENABLE(shape)
+public: 
+    virtual inline::rttr::type get_type() const { return ::rttr::detail::get_type_from_instance(this); }  
+    virtual inline void* get_ptr() { return reinterpret_cast<void*>(this); }
+    virtual inline::rttr::detail::derived_info get_derived_info() { return { reinterpret_cast<void*>(this), ::rttr::detail::get_type_from_instance(this) }; }
+    using base_class_list = ::rttr::type_list<shape>;
+
 };
 
-RTTR_REGISTRATION
+//RTTR_REGISTRATION
+
+static void rttr_auto_register_reflection_function_();                              
+namespace                                                                           
+{                                                                                   
+    struct rttr__auto__register__                                                   
+    {                                                                               
+        rttr__auto__register__()                                                    
+        {                                                                           
+            rttr_auto_register_reflection_function_();                              
+        }                                                                           
+    };                                                                              
+}     
+
+//__LINE__ 表示当前代码所在行号
+//a##b表示ab
+static const rttr__auto__register__ auto_register__102;
+
+static void rttr_auto_register_reflection_function_()
 {
     rttr::registration::class_<shape>("shape")
         .property("visible", &shape::get_visible, &shape::set_visible)
@@ -117,7 +145,7 @@ RTTR_REGISTRATION
         );
 }
 
-int main(int argc, char** argv)
+int _2332main(int argc, char** argv)
 {
     std::string json_string;
 
@@ -144,9 +172,19 @@ int main(int argc, char** argv)
         json_string = io::to_json(my_shape); // serialize the circle to 'json_string'
     }
 
+    variant var = "string";
+    std::string str_var = var.get_value<std::string>();
+    //std::string const * str_val_ref = &str_var;
+    //const std::string * str_val_ref = &str_var;
+    //str_val_ref = nullptr;
+
+    circle c_2("Circle #2");
+    variant var2 = c_2;
+    circle c_2_ref = var2.get_value<circle>();
+
+
     std::cout << "Circle: c_1:\n" << json_string << std::endl;
 
-    circle c_2("Circle #2"); // create a new empty circle
 
     io::from_json(json_string, c_2); // deserialize it with the content of 'c_1'
     std::cout << "\n############################################\n" << std::endl;

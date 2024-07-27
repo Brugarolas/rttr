@@ -301,6 +301,7 @@ RTTR_LOCAL std::unique_ptr<type_data> make_type_data()
 {
     auto obj = std::unique_ptr<type_data>
                (
+                   //前面三个都是引用同一个单例 第四个很关键 用了一些操作能读出类型字符串
                         new type_data
                         {
                             raw_type_info<T>::get_type().m_type_data, wrapper_type_info<T>::get_type().m_type_data,

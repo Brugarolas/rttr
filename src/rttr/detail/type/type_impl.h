@@ -301,12 +301,15 @@ using is_complete_type = std::integral_constant<bool, !std::is_function<T>::valu
 
 template<typename T>
 RTTR_LOCAL RTTR_INLINE enable_if_t<is_complete_type<T>::value, type>
-create_or_get_type() RTTR_NOEXCEPT
+create_or_get_type() RTTR_NOEXCEPT //这里根据注册类型实例化了好多份特化的函数
 {
     // when you get an error here, then the type was not completely defined
     // (a forward declaration is not enough because base_classes will not be found)
+    //FIXMEjhh 这两句话是啥意思
     using type_must_be_complete = char[ sizeof(T) ? 1: -1 ];
     (void) sizeof(type_must_be_complete);
+
+    //val只create一次
     static const type val = create_type(get_registration_manager().add_item(make_type_data<T>()));
     return val;
 }

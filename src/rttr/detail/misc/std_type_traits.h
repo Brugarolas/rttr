@@ -44,6 +44,7 @@ namespace detail
 // shortcuts to avoid writing typename my_traits<T>::type over and over again
 // C++14 has support for this, but we support at the moment C++11
 
+//conditional<bool _Test, class _Ty1, class _Ty2> 默认走_Ty1 _Test为false走_Ty2
 template< bool B, class T, class F >
 using conditional_t = typename std::conditional<B, T, F>::type;
 

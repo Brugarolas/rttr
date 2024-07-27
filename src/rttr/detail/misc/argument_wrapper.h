@@ -49,8 +49,11 @@ struct argument_wrapper
 {
     argument_wrapper() : m_data(nullptr) {}
 
-    template<typename T, typename Tp = typename std::enable_if<!std::is_same<T, argument_wrapper>::value, T>::type>
+    template<typename T, 
+             typename Tp = typename std::enable_if<!std::is_same<T, argument_wrapper>::value, T>::type
+            >
     argument_wrapper(T&& data) : m_data(const_cast<void*>(reinterpret_cast<const void*>(std::addressof(data)))) {}
+    //std::addressof(data) 获取对象地址 避免对象类型重载&运算符
 
     template<typename T>
     T& get_value() const
